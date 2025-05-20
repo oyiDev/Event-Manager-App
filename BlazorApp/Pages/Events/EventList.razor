@@ -1,0 +1,193 @@
+﻿@page "/events"
+@inject HttpClient http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Event</PageTitle>
+
+<h1>Events</h1>
+<p>List of events</p>
+
+@if (events == null)
+{
+    <button class="btn btn-primary mb-3" type="button" disabled>
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <span role="status">Loading...</span>
+    </button>
+
+    <div style="height: 33rem; overflow-y: auto; border-bottom: 1px solid">
+        <table class="table">
+            <thead class="table-active sticky-top">
+                <tr class="sticky-top">
+                    <th scope="col">ID</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">All day</th>
+                    <th scope="col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < 5; i++)
+                {
+                    <tr>
+                        <td><span class="placeholder col-3"></span></td>
+                        <td><span class="placeholder col-6"></span></td>
+                        <td><span class="placeholder col-8"></span></td>
+                        <td><span class="placeholder col-4"></span></td>
+                        <td><span class="placeholder col-3"></span></td>
+                        <td>
+                            <span class="placeholder btn btn-outline-warning btn-sm col-3"></span>
+                            <span class="placeholder btn btn-outline-danger btn-sm col-3 ms-1"></span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-start">
+        <a class="btn btn-primary mb-3" href="/events/create">Add events</a>
+    </div>
+
+    <div style="height: 33rem; overflow-y: auto; border-bottom: 1px solid">
+        <table class="table">
+            <thead class="table-active sticky-top">
+                <tr class="sticky-top">
+                    <th scope="col">ID</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">All day</th>
+                    <th scope="col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var evt in events)
+                {
+                    <tr>
+                        <td>@evt.Id</td>
+                        <td>@evt.Title</td>
+                        <td>@evt.Description</td>
+                        <td>@evt.Start.ToShortDateString()</td>
+                        <td>
+                            @if (evt.AllDay)
+                            {
+                                <span class="badge rounded-pill text-bg-success">Yes</span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill text-bg-warning">No</span>
+                            }
+                        </td>
+                        <td style="white-space:nowrap; width:10px">
+                            <a class="btn btn-outline-warning btn-sm" @onclick='() => ShowModal("edit", evt.Id)'>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-fill" viewBox="0 0 16 16">
+                                    <path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.5.5 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11z" />
+                                </svg>
+                            </a>
+                            <button class="btn btn-outline-danger btn-sm" @onclick='() => ShowModal("delete", evt.Id)'>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (showModal)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,0.2)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@modalTitle</h5>
+                    <button type="button" class="btn-close" @onclick="CancelModal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@modalMessage</p>
+                    @((MarkupString)modalEventDetails)
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CancelModal">Cancel</button>
+                    <button class="btn btn-primary" @onclick="ConfirmModal">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Event>? events;
+    private bool showModal = false;
+    private int selectedEventId;
+    private string? pendingAction; // "edit" or "delete"
+
+    private string modalTitle = "";
+    private string modalMessage = "";
+    private string modalEventDetails = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        events = await http.GetFromJsonAsync<List<Event>>("api/events");
+    }
+
+    private void ShowModal(string action, int eventId)
+    {
+        selectedEventId = eventId;
+        pendingAction = action;
+        showModal = true;
+
+        var evt = events?.FirstOrDefault(e => e.Id == eventId);
+        if (evt != null)
+        {
+            modalEventDetails = $"\r\n\t\t\t\t<div>\r\n\t\t\t\t\t<strong>ID:</strong> {evt.Id}<br />\r\n\t\t\t\t\t<strong>Title:</strong> {evt.Title}<br />\r\n\t\t\t\t\t<strong>Description:</strong> {evt.Description}<br />\r\n\t\t\t\t\t<strong>Date:</strong> {evt.Start.ToShortDateString()}<br />\r\n\t\t\t\t\t<strong>All Day:</strong> {(evt.AllDay ? "Yes" : "No")}\r\n\t\t\t\t</div>";
+        }
+        else
+        {
+            modalEventDetails = "Event details not found.";
+        }
+
+        if (action == "edit")
+        {
+            modalTitle = "Confirm Edit";
+            modalMessage = "Are you sure you want to edit this event?";
+        }
+        else if (action == "delete")
+        {
+            modalTitle = "Confirm Delete";
+            modalMessage = "Are you sure you want to delete this event?";
+        }
+    }
+
+    private void CancelModal()
+    {
+        showModal = false;
+        pendingAction = null;
+        selectedEventId = 0;
+    }
+
+    private async Task ConfirmModal()
+    {
+        showModal = false;
+        if (pendingAction == "edit")
+        {
+            // Navigate to edit page
+            NavigationManager.NavigateTo($"/events/edit/{selectedEventId}");
+        }
+        else if (pendingAction == "delete")
+        {
+            await http.DeleteAsync($"api/events/{selectedEventId}");
+            events = await http.GetFromJsonAsync<List<Event>>("api/events");
+        }
+        pendingAction = null;
+        selectedEventId = 0;
+    }
+}

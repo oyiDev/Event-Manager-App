@@ -1,0 +1,119 @@
+﻿@page "/events/edit/{Id:int}"
+@inject HttpClient http
+@inject NavigationManager NavManager
+
+<div class="container-fluid w-75">
+	<h2 class="mb-3">Edit event</h2>
+
+	@if (eventData == null)
+	{
+		<div class="d-flex justify-content-center">
+			<div class="spinner-border" role="status">
+				<span class="visually-hidden">Loading...</span>
+			</div>
+		</div>
+	}
+	else
+	{
+		<div class="form-floating mb-3">
+			<input class="form-control-plaintext" readonly id="floatingTitle" placeholder="Title" value="@Id">
+			<label for="floatingTitle">Event ID</label>
+		</div>
+
+		<div class="form-floating mb-3">
+			<input class="form-control" id="floatingTitle" placeholder="Title" @bind-value="EventDtoData.Title">
+			<label for="floatingTitle">Title</label>
+			<span class="text-danger">@Errors["Title"]?[0]</span>
+		</div>
+
+		<div class="form-floating mb-3">
+			<input type="datetime-local" class="form-control" id="floatingStart" placeholder="Start date" @bind="EventDtoData.Start">
+			<label for="floatingStart">Start date</label>
+			<span class="text-danger">@Errors["Start"]?[0]</span>
+		</div>
+
+		<div class="form-floating mb-3">
+			<input type="datetime-local" class="form-control" id="floatingEnd" placeholder="End date" @bind="EventDtoData.End">
+			<label for="floatingEnd">End date</label>
+			<span class="text-danger">@Errors["End"]?[0]</span>
+		</div>
+
+		<div class="form-floating mb-3">
+			<textarea class="form-control" id="floatingDescription" placeholder="Description" @bind="EventDtoData.Description"></textarea>
+			<label for="floatingDescription">Description</label>
+			<span class="text-danger">@Errors["Description"]?[0]</span>
+		</div>
+
+		<div class="mb-3">
+			<div class="form-check">
+				<input class="form-check-input" type="checkbox" id="AllDayCheeck" @bind="EventDtoData.AllDay" />
+				<label class="form-check-label" for="AllDayCheeck">
+					All day
+				</label>
+			</div>
+		</div>
+
+		<div class="mt-5">
+			<div class="row">
+				<div class="col-md-6 d-grid">
+					<button class="btn btn-primary" @onclick="SaveEvent">Save</button>
+				</div>
+				<div class="col-md-6 d-grid mt-2">
+					<a class="btn btn-outline-primary" href="/events">Cancel</a>
+				</div>
+			</div>
+		</div>
+	}
+</div>
+
+@code {
+	[Parameter]
+	public int Id { set; get; }
+
+	public Event? eventData = null;
+	public EventDto EventDtoData { set; get; } = new();
+	public JsonNode Errors { set; get; } = new JsonObject();
+
+	protected override async Task OnParametersSetAsync()
+	{
+		try
+		{
+			eventData = await http.GetFromJsonAsync<Event>($"api/events/{Id}");
+			EventDtoData.Title = eventData?.Title ?? "";
+			EventDtoData.Description = eventData?.Description ?? "";
+			EventDtoData.Start = eventData?.Start ?? DateTime.Now;
+			EventDtoData.End = eventData?.End;
+			EventDtoData.AllDay = eventData?.AllDay ?? false;
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine(ex.Message);
+		}
+	}
+
+	private async Task SaveEvent()
+	{
+		var response = await http.PutAsJsonAsync($"api/events/{Id}", EventDtoData);
+
+		if (response.IsSuccessStatusCode)
+		{
+			NavManager.NavigateTo("/events");
+		}
+		else
+		{
+			var strResponse = await response.Content.ReadAsStringAsync();
+			Console.WriteLine("Json Response \n" + strResponse);
+
+			try
+			{
+				var jsonResponse = JsonNode.Parse(strResponse);
+				Errors = jsonResponse?["errors"] ?? new JsonObject();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Error parsing JSON response: " + ex.Message);
+			}
+		}
+
+	}
+}
